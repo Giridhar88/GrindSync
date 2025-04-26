@@ -1,15 +1,16 @@
 import {io} from 'socket.io-client'
-import {useState, useEffect, useRef} from "react";
+import { useEffect, useRef} from "react";
 import Timer from './components/Timer';
+import Roomjoin from './components/Roomjoin';
 import './App.css'
-
+import { BrowserRouter, Routes, Route } from "react-router";
 
 function App() {
 const socketref = useRef(null)
 useEffect(() => {
   socketref.current = io('http://localhost:3000')
   socketref.current.on('connect', ()=>{
-    console.log('connected to server and comm through sockets')
+    console.log(`connected to server with id ${socketref.current.id}` )
   })
   
   return () => {
@@ -19,11 +20,12 @@ useEffect(() => {
 
 
   return (
-    <>
-    <div className='flex items-center justify-center h-[100vh] w-[100vw]'>
-      <Timer/>
-    </div>
-    </>
+    <BrowserRouter>
+    <Routes>
+      <Route path="/" element={<Roomjoin userSocket={socketref}/>} />
+      <Route path="/room/:roomid" element={<Timer/>} />
+    </Routes>
+  </BrowserRouter>
   )
 }
 

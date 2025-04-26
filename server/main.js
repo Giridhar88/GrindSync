@@ -11,10 +11,8 @@ const {Server} = require('socket.io')
 const io = new Server(server, {cors:{origin:'http://localhost:5173'}})
 
 io.on('connection',(socket)=>{
-        console.log(`a new client connected with id ${socket.id}`)
-        socket.on('client-msg', (msg)=>{
-            io.emit('server-msg',msg)
-        })
+    console.log(`a new client connected with id ${socket.id}`)
+    socket.on('join-req',(msg)=>console.log(msg))
 })
 
 server.listen(PORT,()=>{
