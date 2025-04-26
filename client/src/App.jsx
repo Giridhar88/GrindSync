@@ -1,33 +1,28 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import {io} from 'socket.io-client'
+import {useState, useEffect, useRef} from "react";
+import Timer from './components/Timer';
 import './App.css'
 
+
 function App() {
-  const [count, setCount] = useState(0)
+const socketref = useRef(null)
+useEffect(() => {
+  socketref.current = io('http://localhost:3000')
+  socketref.current.on('connect', ()=>{
+    console.log('connected to server and comm through sockets')
+  })
+  
+  return () => {
+    socketref.current.disconnect()
+  }
+}, [])
+
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+    <div className='flex items-center justify-center h-[100vh] w-[100vw]'>
+      <Timer/>
+    </div>
     </>
   )
 }
