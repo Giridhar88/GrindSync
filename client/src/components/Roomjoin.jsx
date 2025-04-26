@@ -30,11 +30,12 @@ const Roomjoin = ({userSocket}) => {
     return (
         <div>
             <form className='flex flex-col gap-2 justify-center items-center' onSubmit={handleSubmit(onSubmit)}>
-                <input className='input w-[20vw]' placeholder='User Name' {...register("name", { required: { value: true, message: 'This field is required' }, maxLength: { value: 20, message: 'Max Length is 20 characters' }, minLength: { value: 5, message: "Min Length is 5 characters" } })} />
+                <input disabled={submitted}  className='input w-[20vw]' placeholder='User Name' {...register("name", { required: { value: true, message: 'This field is required' }, maxLength: { value: 20, message: 'Max Length is 20 characters' }, minLength: { value: 5, message: "Min Length is 5 characters" } })} />
                 {errors.name && <div role="alert" className="w-[20vw] alert alert-error alert-soft">
                     <span>{errors.name.message}</span>
                 </div>}
-                <input className='h-fit text-center my-1 w-fit border-blue-300 border-1 py-1 px-2 rounded-[5px] hover:border-violet-300 cursor-pointer' value='Submit' type="submit" />
+                {submitted?<input className='h-fit text-center my-1 w-fit  border-1 py-1 px-2 rounded-[5px] text-gray-500 border-gray-800' value='Submit' type="submit" />:<input className='h-fit text-center my-1 w-fit border-blue-300 border-1 py-1 px-2 rounded-[5px] hover:border-violet-300 cursor-pointer' value='Submit' type="submit" />}
+                
                 <div className='flex gap-2 items-center'>
                     <button onClick={() => handleCreateRoom()} disabled={!submitted} className='btn'>Create a Room</button>
                     <button onClick={() => { handleJoinRoom() }} disabled={!submitted} className='btn'>Join a Room</button>
