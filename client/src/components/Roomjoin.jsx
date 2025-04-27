@@ -1,31 +1,44 @@
-
-import React, { useState } from 'react'
-
-import { useForm } from "react-hook-form"
+import {useNavigate} from "react-router-dom";
+import React, { useState } from 'react';
+import { useForm } from "react-hook-form";
 import {nanoid} from "nanoid";
 const Roomjoin = ({userSocket}) => {
     const [submitted, setsubmitted] = useState(false);
     const [createRoom, setcreateRoom] = useState(false);
     const [joinRoom, setJoinRoom] = useState(false);
-    const [roomid, setRoomid] = useState(null);
+    const [Roomid, setRoomid] = useState(null);
+    const [userRequest, setuserRequest] = useState({name:'',roomid:''});
+   const navigate = useNavigate();
+    
     const {
         register,
         handleSubmit,
+        getValues,
         formState: { errors },
     } = useForm()
 
     const onSubmit = (data) => {
         setsubmitted(true)
-        console.log(data)
+        
+        setuserRequest((prev)=>({...prev, name:data.name}))
     }
     const handleCreateRoom = () => {
         setcreateRoom(true)
-        const roomid = nanoid(6)
-        setRoomid(roomid)
+        setJoinRoom(false)
+        const roomId = nanoid(6)
+        setRoomid(roomId)
+        setuserRequest(prev=>({...prev, roomid:roomId}))
+        userSocket.current.emit('create-req',{...userRequest, roomid:roomId})
     }
-    const handleJoinRoom = () => {
-        userSocket.current.emit('join-req','trial-msg-sentjoinreq')
+    const handleEnterRoom = () => {
         setJoinRoom(true)
+        setcreateRoom(false)
+    }
+    const handleJoinRoom= ()=>{
+        let data = getValues('roomid')
+        console.log(data)
+        setuserRequest((prev)=>({...prev, roomid:data}))
+        userSocket.current.emit('join-req',{...userRequest, roomid:data})
     }
     return (
         <div>
@@ -38,12 +51,14 @@ const Roomjoin = ({userSocket}) => {
                 
                 <div className='flex gap-2 items-center'>
                     <button onClick={() => handleCreateRoom()} disabled={!submitted} className='btn'>Create a Room</button>
-                    <button onClick={() => { handleJoinRoom() }} disabled={!submitted} className='btn'>Join a Room</button>
+                    <button onClick={() => {handleEnterRoom()}} disabled={!submitted} className='btn'>Enter a RoomId</button>
                 </div>
-                <input hidden={!joinRoom} className='input w-[20vw]' placeholder='Room ID' {...register("roomid")} />
-                <span hidden={!createRoom} className="px-4 py-2 w-fit m-3 border border-gray-300 rounded-lg text-sm font-mono shadow transition hover:shadow-violet-400/40 hover:scale-105">
-                    {roomid}
-                </span>
+                
+                {(joinRoom && !createRoom) && <input className='input w-[20vw]' placeholder='Room ID' {...register("roomid")} />}
+                <button className='btn' onClick={()=>handleJoinRoom()}>Join</button>
+                {(createRoom && !joinRoom) &&  <span className="px-4 py-2 w-fit m-3 border border-gray-300 rounded-lg text-sm font-mono shadow transition hover:shadow-violet-400/40 hover:scale-105">
+                    {Roomid}
+                </span>}
                 
             </form>
         </div>
