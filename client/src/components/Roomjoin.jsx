@@ -7,7 +7,8 @@ const Roomjoin = ({userSocket}) => {
     const [createRoom, setcreateRoom] = useState(false);
     const [joinRoom, setJoinRoom] = useState(false);
     const [Roomid, setRoomid] = useState(null);
-    const [userRequest, setuserRequest] = useState({name:'',roomid:''});
+    const [userRequest, setuserRequest] = useState({name:'',roomid:'',isHost:false});
+    const [isLoading, setisLoading] = useState(false);
    const navigate = useNavigate();
     
     const {
@@ -19,7 +20,6 @@ const Roomjoin = ({userSocket}) => {
 
     const onSubmit = (data) => {
         setsubmitted(true)
-        
         setuserRequest((prev)=>({...prev, name:data.name}))
     }
     const handleCreateRoom = () => {
@@ -28,7 +28,16 @@ const Roomjoin = ({userSocket}) => {
         const roomId = nanoid(6)
         setRoomid(roomId)
         setuserRequest(prev=>({...prev, roomid:roomId}))
-        userSocket.current.emit('create-req',{...userRequest, roomid:roomId})
+        userSocket.current.emit('create-req',{...userRequest, roomid:roomId,isHost:true})
+        userSocket.current.on('created-room', (isCreated)=>{
+            if(isCreated){
+                setisLoading(false)
+            }
+        })
+    }
+    const handleCreateJoin = ()=>{
+        console.log('clicked')
+        navigate('/room')
     }
     const handleEnterRoom = () => {
         setJoinRoom(true)
@@ -39,6 +48,16 @@ const Roomjoin = ({userSocket}) => {
         console.log(data)
         setuserRequest((prev)=>({...prev, roomid:data}))
         userSocket.current.emit('join-req',{...userRequest, roomid:data})
+        userSocket.current.on('room-status',(roomStatus)=>{
+            setisLoading(false)
+            if(roomStatus){
+                console.log
+                navigate('/room')
+            }
+            else{
+                console.log('room doesnt exist')
+            }
+        })
     }
     return (
         <div>
@@ -55,11 +74,12 @@ const Roomjoin = ({userSocket}) => {
                 </div>
                 
                 {(joinRoom && !createRoom) && <input className='input w-[20vw]' placeholder='Room ID' {...register("roomid")} />}
-                <button className='btn' onClick={()=>handleJoinRoom()}>Join</button>
-                {(createRoom && !joinRoom) &&  <span className="px-4 py-2 w-fit m-3 border border-gray-300 rounded-lg text-sm font-mono shadow transition hover:shadow-violet-400/40 hover:scale-105">
+                {(joinRoom && !createRoom) && <button className='btn' onClick={()=>handleJoinRoom()}>Join</button>}
+                {isLoading && <span className="loading loading-ring loading-lg"></span>}
+                {(createRoom && !joinRoom && !isLoading) &&  <span className="px-4 py-2 w-fit m-3 border border-gray-300 rounded-lg text-sm font-mono shadow transition hover:shadow-violet-400/40 hover:scale-105">
                     {Roomid}
                 </span>}
-                
+                {(createRoom && !joinRoom) && <button className='btn' onClick={()=>(handleCreateJoin())}>Join</button>}
             </form>
         </div>
     )

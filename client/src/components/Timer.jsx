@@ -4,16 +4,13 @@ const Timer = () => {
     const [seconds, setSeconds] = useState(10);
     const [isRunning, setIsRunning] = useState(false);
     const [time, setTime] = useState(25);
-    const [timeFormatted, setTimeFormatted] = useState({});
-
-
+   
     //set seconds based on input value
     useEffect(() => {
         if (!isRunning) {
             setSeconds(time * 60)
         }
     }, [time, isRunning])
-
 
     //handle timer using seconds state and isrunningg state
     useEffect(() => {
@@ -29,24 +26,11 @@ const Timer = () => {
                         return s - 1
                     }
                 })
-
             }, 1000);
         }
         return () => clearInterval(interval)
     }, [isRunning])
 
-
-    //handle formatted time
-    useEffect(() => {
-
-        setTimeFormatted(() => {
-            return {
-                min: Math.floor(seconds / 60),
-                sec: seconds % 60,
-            }
-        })
-
-    }, [seconds]);
     const handleChange = (event) => {
         setTime(event.target.value)
         setSeconds(event.target.value * 60)
@@ -55,15 +39,14 @@ const Timer = () => {
         <div>
             <div className="flex flex-col gap-5 items-center justify-center">
                 <div className="radial-progress"
-                    style={{ "--value":(seconds/(time*60))*100, "--size": "12rem", "--thickness": "2px" } /* as React.CSSProperties */}
+                    style={{ "--value":(seconds/(time*60))*100, "--size": "12rem", "--thickness": "2px" } }
                     aria-valuenow={70} role="progressbar"><div>
                         <span className="countdown font-mono text-4xl">
-                            <span style={{ "--value": timeFormatted.min }} aria-live="polite" aria-label={timeFormatted.min}>24</span>
+                            <span style={{ "--value":Math.floor(seconds / 60)  }} aria-live="polite" aria-label={Math.floor(seconds / 60) }></span>
                         </span>
                         min
-
                         <span className="countdown font-mono text-4xl">
-                            <span style={{ "--value": timeFormatted.sec } /* as React.CSSProperties */} aria-live="polite" aria-label={timeFormatted.sec}>59</span>
+                            <span style={{ "--value": seconds % 60 } } aria-live="polite" aria-label={seconds % 60}></span>
                         </span>
                         sec
                     </div></div>

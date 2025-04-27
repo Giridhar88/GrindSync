@@ -23,7 +23,7 @@ useEffect(() => {
     <BrowserRouter>
     <Routes>
       <Route path="/" element={<Roomjoin userSocket={socketref}/>} />
-      <Route path="/room/:roomid" element={<Timer/>} />
+      <Route path="/room" element={<Timer/>} />
     </Routes>
   </BrowserRouter>
   )
