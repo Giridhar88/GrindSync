@@ -12,18 +12,16 @@ useEffect(() => {
   socketref.current.on('connect', ()=>{
     console.log(`connected to server with id ${socketref.current.id}` )
   })
-  
+
   return () => {
     socketref.current.disconnect()
   }
 }, [])
-
-
   return (
     <BrowserRouter>
     <Routes>
       <Route path="/" element={<Roomjoin userSocket={socketref}/>} />
-      <Route path="/room" element={<Timer/>} />
+      <Route path="/room" element={<Timer userSocket={socketref}/>} />
     </Routes>
   </BrowserRouter>
   )

@@ -24,6 +24,7 @@ const Roomjoin = ({userSocket}) => {
     }
     const handleCreateRoom = () => {
         setcreateRoom(true)
+        setisLoading(true)
         setJoinRoom(false)
         const roomId = nanoid(6)
         setRoomid(roomId)
@@ -40,18 +41,19 @@ const Roomjoin = ({userSocket}) => {
         navigate('/room')
     }
     const handleEnterRoom = () => {
+        setisLoading(false)
         setJoinRoom(true)
         setcreateRoom(false)
     }
     const handleJoinRoom= ()=>{
+        setisLoading(true)
         let data = getValues('roomid')
         console.log(data)
         setuserRequest((prev)=>({...prev, roomid:data}))
         userSocket.current.emit('join-req',{...userRequest, roomid:data})
         userSocket.current.on('room-status',(roomStatus)=>{
             setisLoading(false)
-            if(roomStatus){
-                console.log
+            if(roomStatus && !isLoading){
                 navigate('/room')
             }
             else{
@@ -79,7 +81,7 @@ const Roomjoin = ({userSocket}) => {
                 {(createRoom && !joinRoom && !isLoading) &&  <span className="px-4 py-2 w-fit m-3 border border-gray-300 rounded-lg text-sm font-mono shadow transition hover:shadow-violet-400/40 hover:scale-105">
                     {Roomid}
                 </span>}
-                {(createRoom && !joinRoom) && <button className='btn' onClick={()=>(handleCreateJoin())}>Join</button>}
+                {(createRoom && !joinRoom && !isLoading) && <button className='btn' onClick={()=>(handleCreateJoin())}>Join</button>}
             </form>
         </div>
     )

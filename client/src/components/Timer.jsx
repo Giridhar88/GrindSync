@@ -1,17 +1,30 @@
 import React, { useEffect, useState } from 'react';
 
-const Timer = () => {
+const Timer = ({userSocket}) => {
     const [seconds, setSeconds] = useState(10);
     const [isRunning, setIsRunning] = useState(false);
     const [time, setTime] = useState(25);
-   
+   const [members, setmembers] = useState([]);
     //set seconds based on input value
+    
     useEffect(() => {
         if (!isRunning) {
             setSeconds(time * 60)
         }
+        
+        
     }, [time, isRunning])
-
+    
+    useEffect(()=>{
+        const socket = userSocket.current
+        socket.emit('req-update', '')
+        socket.on('update-members', (members)=>(
+            setmembers(members)
+        ))
+        socket.on('req-update',()=>{
+            socket.emit('req-update','')
+        })
+    },[])
     //handle timer using seconds state and isrunningg state
     useEffect(() => {
         let interval;
@@ -37,6 +50,12 @@ const Timer = () => {
     }
     return (
         <div>
+            <div>
+                Members list
+                {members.map((i,k)=>{
+                    return <div key={k}>{i.name}</div>
+                })}
+            </div>
             <div className="flex flex-col gap-5 items-center justify-center">
                 <div className="radial-progress"
                     style={{ "--value":(seconds/(time*60))*100, "--size": "12rem", "--thickness": "2px" } }
