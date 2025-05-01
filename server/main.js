@@ -33,7 +33,7 @@ io.on('connection',(socket)=>{
                 console.log(room_info)
                 socket.join(msg.roomid)
                 socket.on('req-update', ()=>{
-                    io.to(msg.roomid).emit('update-members',room_info[msg.roomid])
+                    io.to(msg.roomid).emit('update-members',{roomid:msg.roomid, users:room_info[msg.roomid]})
                 })
                 return 0
             }
@@ -51,7 +51,7 @@ io.on('connection',(socket)=>{
         }, 0);
         socket.on('req-update', ()=>{
             console.log('reqsent....................................')
-            io.to(msg.roomid).emit('update-members',room_info[msg.roomid])
+            io.to(msg.roomid).emit('update-members',{roomid:msg.roomid, users:room_info[msg.roomid]})
         })
     })
     socket.on('disconnect',()=>{

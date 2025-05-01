@@ -5,6 +5,7 @@ const Timer = ({userSocket}) => {
     const [isRunning, setIsRunning] = useState(false);
     const [time, setTime] = useState(25);
    const [members, setmembers] = useState([]);
+   const [RoomId, setRoomId] = useState();
     //set seconds based on input value
     
     useEffect(() => {
@@ -18,9 +19,10 @@ const Timer = ({userSocket}) => {
     useEffect(()=>{
         const socket = userSocket.current
         socket.emit('req-update', '')
-        socket.on('update-members', (members)=>(
-            setmembers(members)
-        ))
+        socket.on('update-members', ({roomid, users})=>{
+            setRoomId(roomid)
+            setmembers(users)
+    })
         socket.on('req-update',()=>{
             socket.emit('req-update','')
         })
@@ -51,7 +53,7 @@ const Timer = ({userSocket}) => {
     return (
         <div>
             <div>
-                Members list
+                Members list {RoomId}
                 {members.map((i,k)=>{
                     return <div key={k}>{i.name}</div>
                 })}
