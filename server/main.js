@@ -9,7 +9,7 @@ const server = http.createServer(app)
 const {Server} = require('socket.io')
 let room_info = {}
 const io = new Server(server, {cors:{origin:'http://localhost:5173'}})
-
+app.use(express.json());
 const storeUser = (e,room_info,sid)=>{
     const {name, roomid,isHost} = e
     if (room_info[roomid]) {
@@ -23,36 +23,40 @@ const storeUser = (e,room_info,sid)=>{
 app.get('/', (req, res) => {
   res.json(room_info)
 })
+app.post('/api/join-req',(req,res)=>{
+    console.log("This is from POST REQ")
+    console.log(req.body)
+    const msg = req.body
+    const roomid = req.body.data.roomid
+    console.log(roomid)
+    let exists = room_info[roomid]?true:false
+    console.log(exists)
+    if(exists){
+        storeUser(msg.data,room_info,msg.id)
+        res.status(200).send({roomstatus:true})
+    }
+    else{
+        res.status(401).send({roomstatus:false})
+    }
+})
+app.post('/api/create-req',(req,res)=>{
+    console.log('This is from create req POST')
+    console.log(req.body.data)
+    res.status(200).send({createstatus:true})
+})
 io.on('connection',(socket)=>{
     console.log(`a new client connected with id ${socket.id}`)
-    socket.on('join-req',(msg)=>{
-            let exists = room_info[msg.roomid]?true:false
-            if(exists){
-                socket.emit('room-status', exists)
-                storeUser(msg,room_info,socket.id)
-                console.log(room_info)
-                socket.join(msg.roomid)
-                socket.on('req-update', ()=>{
-                    io.to(msg.roomid).emit('update-members',{roomid:msg.roomid, users:room_info[msg.roomid]})
-                })
-                return 0
-            }
-            else{
-                socket.emit('room-status', exists)
-                return 0
-            }
-    })
-    socket.on('create-req',(msg)=>{
-        console.log(msg)
+    socket.on('register-user',(msg)=>{
         storeUser(msg,room_info, socket.id)
         socket.join(msg.roomid)
-        setTimeout(() => {
-            socket.emit('created-room',true)
-        }, 0);
         socket.on('req-update', ()=>{
             console.log('reqsent....................................')
             io.to(msg.roomid).emit('update-members',{roomid:msg.roomid, users:room_info[msg.roomid]})
         })
+    })
+    socket.on('join-user',(msg)=>{
+        socket.join(msg)
+        io.to(msg).emit('update-members',{roomid:msg, users:room_info[msg]})
     })
     socket.on('disconnect',()=>{
         let room = null;

@@ -1,7 +1,8 @@
 import {useNavigate} from "react-router-dom";
-import React, { useState } from 'react';
+import React, {useState } from 'react';
 import { useForm } from "react-hook-form";
 import {nanoid} from "nanoid";
+
 const Roomjoin = ({userSocket}) => {
     const [submitted, setsubmitted] = useState(false);
     const [createRoom, setcreateRoom] = useState(false);
@@ -9,6 +10,7 @@ const Roomjoin = ({userSocket}) => {
     const [Roomid, setRoomid] = useState(null);
     const [userRequest, setuserRequest] = useState({name:'',roomid:'',isHost:false});
     const [isLoading, setisLoading] = useState(false);
+   
    const navigate = useNavigate();
     
     const {
@@ -29,6 +31,22 @@ const Roomjoin = ({userSocket}) => {
         const roomId = nanoid(6)
         setRoomid(roomId)
         setuserRequest(prev=>({...prev, roomid:roomId}))
+        const options = {
+            method:'POST',
+            headers:{
+                'Content-type':'application/json'
+            },
+            body: JSON.stringify({data:{...userRequest, roomid:roomId, isHost:true},id:userSocket.current.id})
+        }
+        const url = 'http://127.0.0.1:3000/api/create-req'
+        fetch(url, options).then((response)=>{
+            response.json().then((responsedata)=>{
+                if(responsedata.createstatus){
+                    setisLoading(false)
+                    userSocket.current.emit('register-user',{...userRequest, roomid:roomId, isHost:true})
+                }
+            })
+        })
         userSocket.current.emit('create-req',{...userRequest, roomid:roomId,isHost:true})
         userSocket.current.on('created-room', (isCreated)=>{
             if(isCreated){
@@ -36,8 +54,8 @@ const Roomjoin = ({userSocket}) => {
             }
         })
     }
+    
     const handleCreateJoin = ()=>{
-        console.log('clicked')
         navigate('/room')
     }
     const handleEnterRoom = () => {
@@ -50,16 +68,35 @@ const Roomjoin = ({userSocket}) => {
         let data = getValues('roomid')
         console.log(data)
         setuserRequest((prev)=>({...prev, roomid:data}))
-        userSocket.current.emit('join-req',{...userRequest, roomid:data})
-        userSocket.current.on('room-status',(roomStatus)=>{
-            setisLoading(false)
-            if(roomStatus && !isLoading){
-                navigate('/room')
+        const url = 'http://127.0.0.1:3000/api/join-req'
+        const options = {
+            method:'POST',
+            headers:{
+                'Content-type':'application/json'
+            },
+            body: JSON.stringify({data:{...userRequest, roomid:data},id:userSocket.current.id})
+        }
+        fetch(url, options).then(response=>{
+            if(!response.ok){
+                console.log('error from server side')
+                setisLoading(false)
             }
             else{
-                console.log('room doesnt exist')
+                response.json().then((resdata)=>{
+                if(resdata.roomstatus){
+                    setisLoading(false)
+                    userSocket.current.emit('join-user', data)
+                    // userSocket.current.emit('req-update','')
+                    navigate('/room')
+                }
+                else{
+                    setisLoading(false)
+                    console.log('room doesnt exist')
+                }
+                })
             }
         })
+
     }
     return (
         <div>

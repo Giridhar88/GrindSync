@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
-
+// import {useNavigate} from "react-router-dom";
 const Timer = ({userSocket}) => {
     const [seconds, setSeconds] = useState(10);
     const [isRunning, setIsRunning] = useState(false);
     const [time, setTime] = useState(25);
    const [members, setmembers] = useState([]);
    const [RoomId, setRoomId] = useState();
+//    const navigate = useNavigate();
     //set seconds based on input value
-    
     useEffect(() => {
         if (!isRunning) {
             setSeconds(time * 60)
@@ -15,7 +15,10 @@ const Timer = ({userSocket}) => {
         
         
     }, [time, isRunning])
-    
+    //handle reload
+    // useEffect(() => {
+    //     const WasReloaded = performance.navigation.type ===1
+    // }, [navigate]);
     useEffect(()=>{
         const socket = userSocket.current
         socket.emit('req-update', '')
