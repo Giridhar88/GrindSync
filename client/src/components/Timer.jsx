@@ -21,14 +21,16 @@ const Timer = ({userSocket}) => {
     // }, [navigate]);
     useEffect(()=>{
         const socket = userSocket.current
-        socket.emit('req-update', '')
+        
         socket.on('update-members', ({roomid, users})=>{
             setRoomId(roomid)
             setmembers(users)
+            socket.emit('update-received','')
+        
     })
-        socket.on('req-update',()=>{
-            socket.emit('req-update','')
-        })
+    setTimeout(() => {
+        socket.emit('req-update', '')
+    }, 50);
     },[])
     //handle timer using seconds state and isrunningg state
     useEffect(() => {

@@ -50,13 +50,15 @@ io.on('connection',(socket)=>{
         storeUser(msg,room_info, socket.id)
         socket.join(msg.roomid)
         socket.on('req-update', ()=>{
-            console.log('reqsent....................................')
+            
             io.to(msg.roomid).emit('update-members',{roomid:msg.roomid, users:room_info[msg.roomid]})
         })
     })
     socket.on('join-user',(msg)=>{
         socket.join(msg)
-        io.to(msg).emit('update-members',{roomid:msg, users:room_info[msg]})
+        socket.on('req-update',()=>{
+            io.to(msg).emit('update-members',{roomid:msg, users:room_info[msg]})
+        })
     })
     socket.on('disconnect',()=>{
         let room = null;
@@ -83,7 +85,7 @@ io.on('connection',(socket)=>{
         }
         if(room){
             console.log(`someone disconnected in roomid ${room}`)
-            io.to(room).emit('req-update', '')
+            io.to(room).emit('update-members', {roomid:room, users:room_info[room]})
         }
         console.log(room_info)
     })

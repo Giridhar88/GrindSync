@@ -47,12 +47,6 @@ const Roomjoin = ({userSocket}) => {
                 }
             })
         })
-        userSocket.current.emit('create-req',{...userRequest, roomid:roomId,isHost:true})
-        userSocket.current.on('created-room', (isCreated)=>{
-            if(isCreated){
-                setisLoading(false)
-            }
-        })
     }
     
     const handleCreateJoin = ()=>{
@@ -86,7 +80,6 @@ const Roomjoin = ({userSocket}) => {
                 if(resdata.roomstatus){
                     setisLoading(false)
                     userSocket.current.emit('join-user', data)
-                    // userSocket.current.emit('req-update','')
                     navigate('/room')
                 }
                 else{
