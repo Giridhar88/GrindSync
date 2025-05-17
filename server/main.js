@@ -50,7 +50,6 @@ io.on('connection',(socket)=>{
         storeUser(msg,room_info, socket.id)
         socket.join(msg.roomid)
         socket.on('req-update', ()=>{
-            
             io.to(msg.roomid).emit('update-members',{roomid:msg.roomid, users:room_info[msg.roomid]})
         })
     })
