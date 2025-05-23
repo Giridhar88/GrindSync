@@ -38,7 +38,7 @@
 │   ├── components/
 │   └── pages/
 ├── server/             # Express + Socket.IO backend
-│   ├── index.js
+│   ├── main.js
 │   └── ...
 ├── README.md
 ```
@@ -50,7 +50,7 @@
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/GrindSync.git
+git clone https://github.com/Giridhar88/GrindSync.git
 cd GrindSync
 ```
 
@@ -71,7 +71,7 @@ npm install
 ```bash
 # In one terminal (backend)
 cd server
-node index.js
+node main.js
 
 # In another terminal (frontend)
 cd client
