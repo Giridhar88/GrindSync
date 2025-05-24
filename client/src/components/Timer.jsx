@@ -8,6 +8,8 @@ const Timer = ({ userSocket }) => {
     const [RoomId, setRoomId] = useState();
     const [rest, setRest] = useState(5);
     const [isBreak, setisBreak] = useState(false);
+    const [timeval, setTimeval] = useState(25);
+    const [restval, setrestval] = useState(5);
     //    const navigate = useNavigate();
     //set seconds based on input value
     useEffect(() => {
@@ -22,7 +24,12 @@ const Timer = ({ userSocket }) => {
     //handle room info 
     useEffect(() => {
         const socket = userSocket.current
-
+        if(!userSocket.current){
+            console.log('socket was never ready')
+        }
+        else{
+            console.log('socket is ready', userSocket.current.id)
+        }
         socket.on('update-members', ({ roomid, users }) => {
             setRoomId(roomid)
             setmembers(users)
@@ -32,6 +39,20 @@ const Timer = ({ userSocket }) => {
         setTimeout(() => {
             socket.emit('req-update', '')
         }, 50);
+        socket.on('update-states',(states)=>{
+            console.log("update for states recieved from the server")
+            console.log(states)
+            setisBreak(states.isBreak)
+            setIsRunning(states.isRunning)
+            setTime(states.time)
+            setRest(states.rest)
+            if(!states.isRunning && !states.isBreak){
+                setSeconds(states.time*60)
+            }
+            else if(states.isBreak){
+                setSeconds(states.rest*60)
+            }
+        })
     }, [])
     //handle timer using seconds state and isrunningg state
     useEffect(() => {
@@ -71,7 +92,7 @@ const Timer = ({ userSocket }) => {
                         return s-1
                     }
                 })
-            }, 200);
+            }, 500);
         }
         return () => {
             clearInterval(interval)
@@ -79,13 +100,16 @@ const Timer = ({ userSocket }) => {
     }, [isBreak]);
 
     const handleChangetime = (event) => {
-        setTime(event.target.value)
-        
+        setTimeval(event.target.value)   
     }
-
     const handleChangebreak = (event)=>{
-        setRest(event.target.value)
-        
+        setrestval(event.target.value)
+    }
+    const updatetime = (e)=>{
+        setTime(e.target.value)
+    }
+    const updaterest = (e)=>{
+        setRest(e.target.value)
     }
     const handlestarttimer = ()=>{
         if(!isRunning && !isBreak){
@@ -98,6 +122,18 @@ const Timer = ({ userSocket }) => {
             setSeconds(time*60)
         }
     }
+    useEffect(() => {
+        if(userSocket.current){
+            console.log('sent the states to server')
+            userSocket.current.emit('timer-update',{
+                isRunning:isRunning,
+                isBreak:isBreak,    
+                time:time,
+                rest:rest,
+                RoomId:RoomId,
+            })
+        }
+    }, [time,isBreak,isRunning,rest]);
     return (
         <div>
             <div>
@@ -126,14 +162,14 @@ const Timer = ({ userSocket }) => {
                     </div></div>
                 <button className='btn' onClick={() => handlestarttimer()}>{(!isRunning && !isBreak)  ? 'Start' : 'Restart'}</button>
                 <div>
-                    <input type="range" min={0} max="90" value={time} onChange={(e) => handleChangetime(e)} className="range range-xs" />
+                    <input type="range" min={0} max="90" value={timeval} onChange={(e) => handleChangetime(e)} onMouseUp={(e)=>updatetime(e)} className="range range-xs" />
                     {time}
                 </div>
                 <div className="w-full max-w-xs">
                     <span className='text-sm text-gray-500'>
                     set break time 
                     </span>
-                    <input  type="range" min={0} max={20} value={rest} onChange={(e)=> handleChangebreak(e)} className="range " step="5" />
+                    <input  type="range" min={0} max={20} value={restval} onChange={(e)=> handleChangebreak(e)} onMouseUp={(e)=>updaterest(e)} className="range " step="5" />
                     <div className="flex justify-between px-2.5 mt-2 text-xs ">
                         <span>|</span>
                         <span>|</span>

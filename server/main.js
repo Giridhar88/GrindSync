@@ -49,6 +49,7 @@ io.on('connection',(socket)=>{
     socket.on('register-user',(msg)=>{
         storeUser(msg,room_info, socket.id)
         socket.join(msg.roomid)
+        console.log(`Socket ${socket.id} joined rooms:`, Array.from(socket.rooms));
         socket.on('req-update', ()=>{
             
             io.to(msg.roomid).emit('update-members',{roomid:msg.roomid, users:room_info[msg.roomid]})
@@ -60,6 +61,20 @@ io.on('connection',(socket)=>{
             io.to(msg).emit('update-members',{roomid:msg, users:room_info[msg]})
         })
     })
+
+    socket.on('timer-update',(msg)=>{
+        console.log(`Emitting update-states to room: ${msg.RoomId}`);
+        console.log(`Socket ${socket.id} is in rooms:`, Array.from(socket.rooms));
+        console.log('recieved state update req')
+        console.log(msg)
+        console.log(msg.RoomId)
+        io.to(msg.RoomId).emit('update-states',{isRunning:msg.isRunning,
+            isBreak:msg.isBreak,
+            time:msg.time,
+            rest:msg.rest,})
+    })
+
+    //update room info on disconnect
     socket.on('disconnect',()=>{
         let room = null;
         for (const key in room_info) {
