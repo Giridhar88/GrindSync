@@ -92,9 +92,9 @@ const Roomjoin = ({userSocket}) => {
 
     }
     return (
-        <div>
+        <div className="h-screen w-full flex justify-start items-center">
             <form className='flex flex-col gap-2 justify-center items-center' onSubmit={handleSubmit(onSubmit)}>
-                <input disabled={submitted}  className='input w-[20vw]' placeholder='User Name' {...register("name", { required: { value: true, message: 'This field is required' }, maxLength: { value: 20, message: 'Max Length is 20 characters' }, minLength: { value: 5, message: "Min Length is 5 characters" } })} />
+                <input disabled={submitted}  className='input w-full' placeholder='User Name' {...register("name", { required: { value: true, message: 'This field is required' }, maxLength: { value: 20, message: 'Max Length is 20 characters' }, minLength: { value: 5, message: "Min Length is 5 characters" } })} />
                 {errors.name && <div role="alert" className="w-[20vw] alert alert-error alert-soft">
                     <span>{errors.name.message}</span>
                 </div>}

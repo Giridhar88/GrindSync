@@ -71,7 +71,9 @@ io.on('connection',(socket)=>{
         io.to(msg.RoomId).emit('update-states',{isRunning:msg.isRunning,
             isBreak:msg.isBreak,
             time:msg.time,
-            rest:msg.rest,})
+            rest:msg.rest,
+            timeval:msg.timeval,
+            restval:msg.restval})
     })
 
     //update room info on disconnect
@@ -104,7 +106,10 @@ io.on('connection',(socket)=>{
         }
         console.log(room_info)
     })
-    
+    socket.on('user-message',(msg)=>{
+       
+        socket.to(msg.roomid).emit('sent-message',msg.message)
+    })
 })
 server.listen(PORT,()=>{
     console.log(`server listening at port ${PORT}`)
