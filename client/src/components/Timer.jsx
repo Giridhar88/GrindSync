@@ -3,7 +3,7 @@ import Message from './Message';
 
 
 const Timer = ({ userSocket }) => {
-    const [seconds, setSeconds] = useState(10);
+    const [seconds, setSeconds] = useState(0);
     const [isRunning, setIsRunning] = useState(false);
     const [time, setTime] = useState(25);
     const [members, setmembers] = useState([]);
@@ -13,16 +13,16 @@ const Timer = ({ userSocket }) => {
     const [timeval, setTimeval] = useState(25);
     const [restval, setrestval] = useState(5);
     
-    const startTimeStamp = useRef(0)
+    const timerStartTime = useRef(0)
     const joined = useRef(true)
-    
-
+    const hasInitialized = useRef(false)
+    const intervalRef = useRef(null)
     useEffect(() => {
-        if (!isRunning) {
+        if (!isRunning && !isBreak) {
             setSeconds(time * 60)
         }
 
-    }, [time, isRunning])
+    }, [time, isRunning, isBreak])
 
     useEffect(() => {
         const socket = userSocket.current
@@ -36,19 +36,23 @@ const Timer = ({ userSocket }) => {
             setRoomId(roomid)
             setmembers(users)
             
-            if(joined.current){
-                joined.current = false
+            if(joined.current && !hasInitialized.current){
+                hasInitialized.current = true
+                
                 socket.emit('init-states', roomid, (serverStates)=>{
                     console.log(`init states called with values `)
                     console.table(serverStates)
-                    console.log(Math.floor((Date.now()-serverStates.now)/1000))
+                    
                     setisBreak(serverStates.isBreak)
                     setIsRunning(serverStates.isRunning)
                     setTime(serverStates.time)
                     setRest(serverStates.rest)
                     setrestval(serverStates.restval)
                     setTimeval(serverStates.timeval)
-                    startTimeStamp.current = serverStates.now
+                    setSeconds(serverStates.remainingSeconds || serverStates.time*60)
+                    timerStartTime.current = serverStates.timerStartTime
+                    joined.current = false;
+                    console.log("==INIT COMPLETE==")
                 })
                 
             }
@@ -62,22 +66,30 @@ const Timer = ({ userSocket }) => {
         
 
         socket.on('update-states', (states) => {
-            console.log("update for states recieved from the server")
-            // console.log(states)
-            setisBreak(states.isBreak)
-            setIsRunning(states.isRunning)
+            console.log("=== UPDATE-STATES RECEIVED ===")
+            
+            console.log("Server state:", states)
+            console.log("Time difference:", Date.now() - states.now)
+            
+            // Always update settings (these don't affect running timers)
             setTime(states.time)
             setRest(states.rest)
             setrestval(states.restval)
             setTimeval(states.timeval)
-            startTimeStamp.current = states.now
-            if (!states.isRunning && !states.isBreak) {
-                setSeconds(states.time * 60 + Math.floor((Date.now() - states.now) / 1000))
+            setisBreak(states.isBreak)
+            setIsRunning(states.isRunning)
+            
+            if(states.timerStartTime){
+                timerStartTime.current = states.timerStartTime
             }
-            else if (states.isBreak) {
-                setSeconds(states.rest * 60 + Math.floor((Date.now() - states.now) / 1000))
+            if(typeof states.remainingSeconds === 'number'){
+                setSeconds(states.remainingSeconds)
             }
+            
+            
+            console.log("=== END UPDATE ===")
         })
+        
         const handleBack = () => {
             socket.disconnect()
         }
@@ -88,50 +100,60 @@ const Timer = ({ userSocket }) => {
     }, [])
 
     useEffect(() => {
-        let interval;
-        if (isRunning) {
-            interval = setInterval(() => {
-                let remainingTime = time * 60 - Math.floor((Date.now() - startTimeStamp.current) / 1000)
-                setSeconds((s) => {
-                    if (s <= 0) {
-                        setIsRunning(false)
-                        setisBreak(true)
-                        return 0
+        // Clear any existing interval
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+        }
+    
+        if (isRunning || isBreak) {
+            intervalRef.current = setInterval(() => {
+                const now = Date.now();
+                const elapsed = Math.floor((now - timerStartTime.current) / 1000);
+                
+                let totalDuration;
+                let shouldTransition = false;
+                let newRemainingTime;
+                
+                if (isRunning && !isBreak) {
+                    // Work timer
+                    totalDuration = time * 60;
+                    newRemainingTime = Math.max(0, totalDuration - elapsed);
+                    shouldTransition = newRemainingTime <= 0;
+                } else if (isBreak) {
+                    // Break timer
+                    totalDuration = rest * 60;
+                    newRemainingTime = Math.max(0, totalDuration - elapsed);
+                    shouldTransition = newRemainingTime <= 0;
+                }
+                
+                setSeconds(newRemainingTime);
+                
+                if (shouldTransition) {
+                    if (isRunning && !isBreak) {
+                        // Work timer finished, start break
+                        setIsRunning(false);
+                        setisBreak(true);
+                        timerStartTime.current = now;
+                        setSeconds(rest * 60);
+                    } else if (isBreak) {
+                        // Break finished, start work
+                        setisBreak(false);
+                        setIsRunning(true);
+                        timerStartTime.current = now;
+                        setSeconds(time * 60);
                     }
-                    else {
-                        return remainingTime
-                    }
-                })
+                }
             }, 1000);
         }
-        return () => clearInterval(interval)
-    }, [isRunning])
-
-    useEffect(() => {
-        let interval;
-
-        if (isBreak) {
-            setSeconds(rest * 60)
-            interval = setInterval(() => {
-                let remainingTime = rest * 60 - Math.floor((Date.now() - startTimeStamp.current) / 1000)
-                setSeconds((s) => {
-                    if (s <= 0) {
-                        setisBreak(false)
-                        setIsRunning(true)
-                        setSeconds(time * 60)
-                        return 0
-                    }
-                    else {
-                        return remainingTime
-                    }
-                })
-            }, 1000);
-        }
+    
         return () => {
-            clearInterval(interval)
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+            }
         };
-    }, [isBreak]);
-
+    }, [isRunning, isBreak, time, rest]);
     const handleChangetime = (event) => {
         setTimeval(event.target.value)
     }
@@ -145,16 +167,21 @@ const Timer = ({ userSocket }) => {
         setRest(e.target.value)
     }
     const handlestarttimer = () => {
+        const now = Date.now();  // ADD THIS LINE
+        
         if (!isRunning && !isBreak) {
-            setIsRunning(true)
-            setSeconds(time * 60)
+            // Start timer
+            setIsRunning(true);
+            setSeconds(time * 60);
+            timerStartTime.current = now;  // ADD THIS LINE
+        } else {
+            // Reset timer
+            setIsRunning(false);
+            setisBreak(false);
+            setSeconds(time * 60);
+            timerStartTime.current = now;  // ADD THIS LINE
         }
-        else {
-            setIsRunning(false)
-            setisBreak(false)
-            setSeconds(time * 60)
-        }
-    }
+    };
     useEffect(() => {
         if (userSocket.current && !joined.current) {
             console.log('sent the states to server')
@@ -168,8 +195,7 @@ const Timer = ({ userSocket }) => {
                 restval: restval,
             })
         }
-    }, [time, isBreak, isRunning, rest, timeval, restval]);
-
+    }, [isBreak, isRunning, rest, timeval, restval, RoomId, time]); 
     return (
         <div className="min-h-screen bg-black flex flex-col lg:flex-row gap-4 p-4 md:p-6">
             {/* Members List */}
@@ -185,7 +211,7 @@ const Timer = ({ userSocket }) => {
             {/* Timer Controls */}
             <div className="w-full lg:w-2/4 flex flex-col items-center justify-center bg-gray-900 rounded-md p-6 order-1 lg:order-2">
                 <div className="flex gap-4 mb-4">
-                    isRunning:{isRunning ? "yes" : "no"},isBreak:{isBreak ? "yes" : "no"},joined:{joined?"yes":"no"}
+                    {/* isRunning:{isRunning ? "yes" : "no"},isBreak:{isBreak ? "yes" : "no"},joined:{joined?"yes":"no"} */}
                     {(isRunning && !isBreak) && <span><div className="transition-all inline-grid *:[grid-area:1/1]">
                         <div className="status status-error animate-ping"></div>
                         <div className="status status-error"></div>
