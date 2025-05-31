@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Message from './Message';
+
 
 const Timer = ({ userSocket }) => {
     const [seconds, setSeconds] = useState(10);
@@ -11,11 +12,16 @@ const Timer = ({ userSocket }) => {
     const [isBreak, setisBreak] = useState(false);
     const [timeval, setTimeval] = useState(25);
     const [restval, setrestval] = useState(5);
+    
+    const startTimeStamp = useRef(0)
+    const joined = useRef(true)
+    
 
     useEffect(() => {
         if (!isRunning) {
-            setSeconds(time * 60)}
-        
+            setSeconds(time * 60)
+        }
+
     }, [time, isRunning])
 
     useEffect(() => {
@@ -29,11 +35,29 @@ const Timer = ({ userSocket }) => {
         socket.on('update-members', ({ roomid, users }) => {
             setRoomId(roomid)
             setmembers(users)
+            
+            if(joined.current){
+                joined.current = false
+                socket.emit('init-states', roomid, (serverStates)=>{
+                    setisBreak(serverStates.isBreak)
+                    setIsRunning(serverStates.isRunning)
+                    setTime(serverStates.time)
+                    setRest(serverStates.rest)
+                    setrestval(serverStates.restval)
+                    setTimeval(serverStates.timeval)
+                    startTimeStamp.current = serverStates.now
+                })
+                
+            }
+            
             socket.emit('update-received', '')
         })
         setTimeout(() => {
             socket.emit('req-update', '')
         }, 50);
+
+        
+
         socket.on('update-states', (states) => {
             console.log("update for states recieved from the server")
             console.log(states)
@@ -43,19 +67,28 @@ const Timer = ({ userSocket }) => {
             setRest(states.rest)
             setrestval(states.restval)
             setTimeval(states.timeval)
+            startTimeStamp.current = states.now
             if (!states.isRunning && !states.isBreak) {
-                setSeconds(states.time * 60)
+                setSeconds(states.time * 60 + Math.floor((Date.now() - states.now) / 1000))
             }
             else if (states.isBreak) {
-                setSeconds(states.rest * 60)
+                setSeconds(states.rest * 60 + Math.floor((Date.now() - states.now) / 1000))
             }
         })
+        const handleBack = () => {
+            socket.disconnect()
+        }
+        window.addEventListener('popstate', handleBack)
+        return (
+            window.removeEventListener('popstate', handleBack)
+        )
     }, [])
 
     useEffect(() => {
         let interval;
         if (isRunning) {
             interval = setInterval(() => {
+                let remainingTime = time * 60 - Math.floor((Date.now() - startTimeStamp.current) / 1000)
                 setSeconds((s) => {
                     if (s <= 0) {
                         setIsRunning(false)
@@ -63,7 +96,7 @@ const Timer = ({ userSocket }) => {
                         return 0
                     }
                     else {
-                        return s - 1
+                        return remainingTime
                     }
                 })
             }, 1000);
@@ -73,9 +106,11 @@ const Timer = ({ userSocket }) => {
 
     useEffect(() => {
         let interval;
+
         if (isBreak) {
             setSeconds(rest * 60)
             interval = setInterval(() => {
+                let remainingTime = rest * 60 - Math.floor((Date.now() - startTimeStamp.current) / 1000)
                 setSeconds((s) => {
                     if (s <= 0) {
                         setisBreak(false)
@@ -84,7 +119,7 @@ const Timer = ({ userSocket }) => {
                         return 0
                     }
                     else {
-                        return s - 1
+                        return remainingTime
                     }
                 })
             }, 1000);
@@ -118,7 +153,7 @@ const Timer = ({ userSocket }) => {
         }
     }
     useEffect(() => {
-        if (userSocket.current) {
+        if (userSocket.current && !joined.current) {
             console.log('sent the states to server')
             userSocket.current.emit('timer-update', {
                 isRunning: isRunning,
@@ -126,11 +161,11 @@ const Timer = ({ userSocket }) => {
                 time: time,
                 rest: rest,
                 RoomId: RoomId,
-                timeval:timeval,
-                restval:restval,
+                timeval: timeval,
+                restval: restval,
             })
         }
-    }, [time, isBreak, isRunning, rest,timeval,restval]);
+    }, [time, isBreak, isRunning, rest, timeval, restval]);
 
     return (
         <div className="min-h-screen bg-black flex flex-col lg:flex-row gap-4 p-4 md:p-6">
@@ -147,19 +182,19 @@ const Timer = ({ userSocket }) => {
             {/* Timer Controls */}
             <div className="w-full lg:w-2/4 flex flex-col items-center justify-center bg-gray-900 rounded-md p-6 order-1 lg:order-2">
                 <div className="flex gap-4 mb-4">
-                    <span className={`px-2 py-1 rounded text-sm ${isRunning ? 'bg-green-600' : 'bg-red-600'} text-white`}>
-                        isRunning
-                    </span>
-                    <span className={`px-2 py-1 rounded text-sm ${isBreak ? 'bg-green-600' : 'bg-red-600'} text-white`}>
-                        isBreak
-                    </span>
-                    <span>rest:{rest},restval:{restval},time:{time},timeval:{timeval}</span>
+                    isRunning:{isRunning ? "yes" : "no"},isBreak:{isBreak ? "yes" : "no"},joined:{joined?"yes":"no"}
+                    {(isRunning && !isBreak) && <span><div className="transition-all inline-grid *:[grid-area:1/1]">
+                        <div className="status status-error animate-ping"></div>
+                        <div className="status status-error"></div>
+                    </div> Stay Focused</span>}
+                    {(!isRunning && isBreak) && <span><div className="status status-info animate-bounce"></div> Time to relax</span>}
+
                 </div>
 
-                <div 
-                    className="radial-progress text-gray-300" 
-                    style={{ "--value": (seconds / (time * 60)) * 100, "--size": "12rem", "--thickness": "2px" }} 
-                    aria-valuenow={(seconds / (time * 60)) * 100} 
+                <div
+                    className="radial-progress text-gray-300"
+                    style={{ "--value": (seconds / (time * 60)) * 100, "--size": "12rem", "--thickness": "2px" }}
+                    aria-valuenow={(seconds / (time * 60)) * 100}
                     role="progressbar"
                 >
                     <div>
@@ -174,7 +209,7 @@ const Timer = ({ userSocket }) => {
                     </div>
                 </div>
 
-                <button 
+                <button
                     className="btn bg-gray-800 hover:bg-gray-700 text-gray-200 px-6 py-2 rounded mt-6"
                     onClick={handlestarttimer}
                 >
@@ -184,14 +219,14 @@ const Timer = ({ userSocket }) => {
                 <div className="w-full max-w-md space-y-6 mt-6">
                     <div>
                         <label className="text-sm text-gray-400 block mb-2">Work Duration</label>
-                        <input 
+                        <input
                             disabled={isRunning}
-                            type="range" 
-                            min={0} 
-                            max="90" 
-                            value={timeval} 
-                            onChange={handleChangetime} 
-                            onMouseUp={updatetime} 
+                            type="range"
+                            min={0}
+                            max="90"
+                            value={timeval}
+                            onChange={handleChangetime}
+                            onMouseUp={updatetime}
                             className="range range-xs range-accent w-full"
                         />
                         <div className="text-center mt-2 text-gray-400">{time} min</div>
@@ -199,15 +234,15 @@ const Timer = ({ userSocket }) => {
 
                     <div>
                         <label className="text-sm text-gray-400 block mb-2">Break Duration</label>
-                        <input 
-                            type="range" 
-                            min={0} 
-                            max="20" 
-                            value={restval} 
-                            onChange={handleChangebreak} 
-                            onMouseUp={updaterest} 
-                            className="range range-xs range-accent w-full" 
-                            step="5" 
+                        <input
+                            type="range"
+                            min={0}
+                            max="20"
+                            value={restval}
+                            onChange={handleChangebreak}
+                            onMouseUp={updaterest}
+                            className="range range-xs range-accent w-full"
+                            step="5"
                         />
                         <div className="flex justify-between text-xs text-gray-500 mt-2">
                             <span>0</span>
@@ -219,10 +254,8 @@ const Timer = ({ userSocket }) => {
                     </div>
                 </div>
             </div>
-
-            
             <div className="w-full lg:w-1/4 bg-gray-900 rounded-md p-4 order-3">
-                {userSocket && <Message  roomid={RoomId} socket={userSocket} />}
+                {userSocket && <Message roomid={RoomId} socket={userSocket} enabled={isBreak} />}
             </div>
         </div>
     );

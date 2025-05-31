@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-const Message = ({ roomid, socket }) => {
+const Message = ({ roomid, socket, enabled }) => {
   const [message, setMessage] = useState('');
   const [messageSet, setMessageSet] = useState([]);
   const bottomref = useRef()
@@ -13,7 +13,7 @@ const Message = ({ roomid, socket }) => {
     socket.current.on('sent-message', handler);
   
     return () => {
-      socket.current.off('sent-message', handler); // ❗ remove listener
+      socket.current.off('sent-message', handler); 
     };
   }, []);
   
@@ -23,9 +23,12 @@ const Message = ({ roomid, socket }) => {
   }, [messageSet]);
 
   const sendMessage = () => {
+    if(message!=''){
+      setMessage('')
     setMessageSet((p) => [...p, { message: message, others: false }])
     console.table(messageSet)
     socket.current.emit('user-message', { message: message, roomid: roomid })
+    }
     
   }
   
@@ -45,7 +48,9 @@ const Message = ({ roomid, socket }) => {
         <div ref = {bottomref}/>
       </div>
 
-      <div className='flex justify-center items-center gap-2'><input
+      <div className='flex justify-center items-center gap-2'>
+        <input
+        disabled = {!enabled}
         onKeyDown={(e)=>{
           if(e.key === 'Enter'){
             sendMessage()
@@ -57,7 +62,7 @@ const Message = ({ roomid, socket }) => {
         placeholder="Type here"
         className="input input-bordered mt-2 w-full"
       />
-        <button className='bg-black rounded-full' onClick={() => sendMessage()}><svg xmlns="http://www.w3.org/2000/svg" className='m-2' height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z" /></svg>
+        <button disabled = {!enabled} className='bg-black rounded-full' onClick={() => sendMessage()}><svg xmlns="http://www.w3.org/2000/svg" className='m-2' height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z" /></svg>
         </button>
       </div>
 

@@ -7,9 +7,12 @@ const PORT = 3000
 const path = require('path')
 const server = http.createServer(app)
 const {Server} = require('socket.io')
-let room_info = {}
 const io = new Server(server, {cors:{origin:'http://localhost:5173'}})
 app.use(express.json());
+
+let room_info = {}
+let roomStates = {}
+
 const storeUser = (e,room_info,sid)=>{
     const {name, roomid,isHost} = e
     if (room_info[roomid]) {
@@ -20,17 +23,17 @@ const storeUser = (e,room_info,sid)=>{
     console.log(room_info)
 }
 
-app.get('/', (req, res) => {
-  res.json(room_info)
+app.get('/get', (req, res) => {
+  res.json(roomStates)
 })
 app.post('/api/join-req',(req,res)=>{
-    console.log("This is from POST REQ")
-    console.log(req.body)
+    
+   
     const msg = req.body
     const roomid = req.body.data.roomid
-    console.log(roomid)
+   
     let exists = room_info[roomid]?true:false
-    console.log(exists)
+    
     if(exists){
         storeUser(msg.data,room_info,msg.id)
         res.status(200).send({roomstatus:true})
@@ -40,8 +43,16 @@ app.post('/api/join-req',(req,res)=>{
     }
 })
 app.post('/api/create-req',(req,res)=>{
-    console.log('This is from create req POST')
-    console.log(req.body.data)
+    
+    roomStates[req.body.data.roomid] = {
+        isRunning: false,
+        isBreak: false,
+        time: 25,
+        rest: 5,
+        timeval: 25,
+        restval: 5,
+        now: Date.now()
+      }
     res.status(200).send({createstatus:true})
 })
 io.on('connection',(socket)=>{
@@ -61,21 +72,26 @@ io.on('connection',(socket)=>{
             io.to(msg).emit('update-members',{roomid:msg, users:room_info[msg]})
         })
     })
-
+    socket.on('init-states', (rid,callback)=>{
+        console.log('init states called')
+        console.log(roomStates[rid])
+        callback(roomStates[rid])
+    })
     socket.on('timer-update',(msg)=>{
         console.log(`Emitting update-states to room: ${msg.RoomId}`);
-        console.log(`Socket ${socket.id} is in rooms:`, Array.from(socket.rooms));
-        console.log('recieved state update req')
-        console.log(msg)
-        console.log(msg.RoomId)
-        io.to(msg.RoomId).emit('update-states',{isRunning:msg.isRunning,
+       
+        let roomState = {isRunning:msg.isRunning,
             isBreak:msg.isBreak,
             time:msg.time,
             rest:msg.rest,
             timeval:msg.timeval,
-            restval:msg.restval})
+            restval:msg.restval,
+            now:Date.now()}
+        roomStates[msg.RoomId] = roomState
+        
+        io.to(msg.RoomId).emit('update-states',roomState)
     })
-
+    
     //update room info on disconnect
     socket.on('disconnect',()=>{
         let room = null;
