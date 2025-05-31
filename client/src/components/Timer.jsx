@@ -39,6 +39,9 @@ const Timer = ({ userSocket }) => {
             if(joined.current){
                 joined.current = false
                 socket.emit('init-states', roomid, (serverStates)=>{
+                    console.log(`init states called with values `)
+                    console.table(serverStates)
+                    console.log(Math.floor((Date.now()-serverStates.now)/1000))
                     setisBreak(serverStates.isBreak)
                     setIsRunning(serverStates.isRunning)
                     setTime(serverStates.time)
@@ -60,7 +63,7 @@ const Timer = ({ userSocket }) => {
 
         socket.on('update-states', (states) => {
             console.log("update for states recieved from the server")
-            console.log(states)
+            // console.log(states)
             setisBreak(states.isBreak)
             setIsRunning(states.isRunning)
             setTime(states.time)
