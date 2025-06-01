@@ -4,6 +4,9 @@
 
 ---
 
+**Live Demo:** [grind-sync.vercel.app](https://grind-sync.vercel.app/)
+
+
 ## 🚀 Features
 
 - 🔗 **Room-Based Collaboration**  
@@ -35,8 +38,10 @@
 
 ```
 ├── client/             # React frontend
-│   ├── components/
-│   └── pages/
+│   ├──src
+|   |   ├──components
+|   |   ├──...
+|   |---...
 ├── server/             # Express + Socket.IO backend
 │   ├── main.js
 │   └── ...
@@ -78,6 +83,16 @@ cd client
 npm run dev
 ```
 
+### 4. Setup env variables
+*create an env file in client folder (GrindSync/client/.env) and copy paste the contents* 
+```
+VITE_BACKEND_URL=http://localhost:3000
+```
+*create an env file in the server folder (GrindSync/server/.env)  and copy paste the contents* 
+```
+PORT=3000
+CLIENT_ORIGIN=https://localhost:5173
+```
 ---
 
 ## 🌐 Usage
@@ -86,19 +101,10 @@ npm run dev
 2. Create a room or enter an existing Room ID.
 3. Join the room and wait for others.
 4. Start the timer — everyone stays in sync.
-5. Use upcoming chat and break features for a full Pomodoro experience.
+5. Chat during the break time using the built in chat
 
 ---
 
-## 📌 Future Improvements
-
-- [x] Break timer support with adjustable durations
-- [ ] Integrated chat with Socket.IO
-- [ ] Timer control permissions (e.g., host-only start/pause)
-- [ ] Persistent rooms with reconnect logic
-- [ ] Mobile responsiveness and UI polish
-
----
 
 ## 🤝 Contributing
 
