@@ -5,7 +5,7 @@ const app = express()
 require('dotenv').config();
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "https://grind-sync.vercel.app";
 app.use(cors({ origin: CLIENT_ORIGIN }));
-const PORT = 3000
+const PORT = process.env.PORT
 const path = require('path')
 const server = http.createServer(app)
 const {Server} = require('socket.io');
@@ -15,7 +15,7 @@ app.use(express.json());
 
 let room_info = {}
 let roomStates = {}
-
+console.log(PORT)
 const storeUser = (e,room_info,sid)=>{
     const {name, roomid,isHost} = e
     if (room_info[roomid]) {
