@@ -2,13 +2,15 @@ const http = require('http')
 const cors = require('cors')
 const express = require('express')
 const app = express()
-app.use(cors({ origin: 'http://localhost:5173' }));
+require('dotenv').config();
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "https://grind-sync.vercel.app";
+app.use(cors({ origin: CLIENT_ORIGIN }));
 const PORT = 3000
 const path = require('path')
 const server = http.createServer(app)
 const {Server} = require('socket.io');
-const { moveMessagePortToContext } = require('worker_threads');
-const io = new Server(server, {cors:{origin:'http://localhost:5173'}})
+
+const io = new Server(server, {cors:{origin:CLIENT_ORIGIN}})
 app.use(express.json());
 
 let room_info = {}
