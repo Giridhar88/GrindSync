@@ -3,7 +3,8 @@ import React, {useState } from 'react';
 import { useForm } from "react-hook-form";
 import {nanoid} from "nanoid";
 import MouseGlow from "./MouseGlow";
-const Roomjoin = ({userSocket}) => {
+
+const Roomjoin = ({backendURL, userSocket}) => {
     const [submitted, setsubmitted] = useState(false);
     const [createRoom, setcreateRoom] = useState(false);
     const [joinRoom, setJoinRoom] = useState(false);
@@ -38,7 +39,7 @@ const Roomjoin = ({userSocket}) => {
             },
             body: JSON.stringify({data:{...userRequest, roomid:roomId, isHost:true},id:userSocket.current.id})
         }
-        const url = 'http://127.0.0.1:3000/api/create-req'
+        const url = `${backendURL}/api/create-req`
         fetch(url, options).then((response)=>{
             response.json().then((responsedata)=>{
                 if(responsedata.createstatus){
@@ -62,7 +63,7 @@ const Roomjoin = ({userSocket}) => {
         let data = getValues('roomid')
         console.log(data)
         setuserRequest((prev)=>({...prev, roomid:data}))
-        const url = 'http://127.0.0.1:3000/api/join-req'
+        const url = `${backendURL}/api/join-req`
         const options = {
             method:'POST',
             headers:{
