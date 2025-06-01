@@ -12,7 +12,9 @@ const Timer = ({ userSocket }) => {
     const [isBreak, setisBreak] = useState(false);
     const [timeval, setTimeval] = useState(25);
     const [restval, setrestval] = useState(5);
-    
+    const [isSliding, setIsSliding] = useState(false)
+    const [localTimeVal, setLocalTimeVal] = useState(timeval);
+    const [localRestVal, setLocalRestVal] = useState(restval)
     const timerStartTime = useRef(0)
     const joined = useRef(true)
     const hasInitialized = useRef(false)
@@ -35,42 +37,42 @@ const Timer = ({ userSocket }) => {
         socket.on('update-members', ({ roomid, users }) => {
             setRoomId(roomid)
             setmembers(users)
-            
-            if(joined.current && !hasInitialized.current){
+
+            if (joined.current && !hasInitialized.current) {
                 hasInitialized.current = true
-                
-                socket.emit('init-states', roomid, (serverStates)=>{
+
+                socket.emit('init-states', roomid, (serverStates) => {
                     console.log(`init states called with values `)
                     console.table(serverStates)
-                    
+
                     setisBreak(serverStates.isBreak)
                     setIsRunning(serverStates.isRunning)
                     setTime(serverStates.time)
                     setRest(serverStates.rest)
                     setrestval(serverStates.restval)
                     setTimeval(serverStates.timeval)
-                    setSeconds(serverStates.remainingSeconds || serverStates.time*60)
+                    setSeconds(serverStates.remainingSeconds || serverStates.time * 60)
                     timerStartTime.current = serverStates.timerStartTime
                     joined.current = false;
                     console.log("==INIT COMPLETE==")
                 })
-                
+
             }
-            
+
             socket.emit('update-received', '')
         })
         setTimeout(() => {
             socket.emit('req-update', '')
         }, 50);
 
-        
+
 
         socket.on('update-states', (states) => {
             console.log("=== UPDATE-STATES RECEIVED ===")
-            
+
             console.log("Server state:", states)
             console.log("Time difference:", Date.now() - states.now)
-            
+
             // Always update settings (these don't affect running timers)
             setTime(states.time)
             setRest(states.rest)
@@ -78,18 +80,18 @@ const Timer = ({ userSocket }) => {
             setTimeval(states.timeval)
             setisBreak(states.isBreak)
             setIsRunning(states.isRunning)
-            
-            if(states.timerStartTime){
+
+            if (states.timerStartTime) {
                 timerStartTime.current = states.timerStartTime
             }
-            if(typeof states.remainingSeconds === 'number'){
+            if (typeof states.remainingSeconds === 'number') {
                 setSeconds(states.remainingSeconds)
             }
-            
-            
+
+
             console.log("=== END UPDATE ===")
         })
-        
+
         const handleBack = () => {
             socket.disconnect()
         }
@@ -105,16 +107,16 @@ const Timer = ({ userSocket }) => {
             clearInterval(intervalRef.current);
             intervalRef.current = null;
         }
-    
+
         if (isRunning || isBreak) {
             intervalRef.current = setInterval(() => {
                 const now = Date.now();
                 const elapsed = Math.floor((now - timerStartTime.current) / 1000);
-                
+
                 let totalDuration;
                 let shouldTransition = false;
                 let newRemainingTime;
-                
+
                 if (isRunning && !isBreak) {
                     // Work timer
                     totalDuration = time * 60;
@@ -126,9 +128,9 @@ const Timer = ({ userSocket }) => {
                     newRemainingTime = Math.max(0, totalDuration - elapsed);
                     shouldTransition = newRemainingTime <= 0;
                 }
-                
+
                 setSeconds(newRemainingTime);
-                
+
                 if (shouldTransition) {
                     if (isRunning && !isBreak) {
                         // Work timer finished, start break
@@ -146,7 +148,7 @@ const Timer = ({ userSocket }) => {
                 }
             }, 1000);
         }
-    
+
         return () => {
             if (intervalRef.current) {
                 clearInterval(intervalRef.current);
@@ -155,31 +157,45 @@ const Timer = ({ userSocket }) => {
         };
     }, [isRunning, isBreak, time, rest]);
     const handleChangetime = (event) => {
-        setTimeval(event.target.value)
+        setLocalTimeVal(event.target.value)
+        setIsSliding(true)
     }
     const handleChangebreak = (event) => {
-        setrestval(event.target.value)
+        setLocalRestVal(event.target.value)
+        setIsSliding(true)
     }
     const updatetime = (e) => {
+        setIsSliding(false)
+        setTimeval(e.target.value)
         setTime(e.target.value)
     }
     const updaterest = (e) => {
+        setIsSliding(false)
+        setrestval(e.target.value)
         setRest(e.target.value)
     }
+    useEffect(() => {
+        if (!isSliding)
+            setLocalRestVal(restval)
+    }, [restval])
+    useEffect(() => {
+        if (!isSliding)
+            setLocalTimeVal(timeval)
+    }, [timeval])
     const handlestarttimer = () => {
-        const now = Date.now();  // ADD THIS LINE
-        
+        const now = Date.now();
+
         if (!isRunning && !isBreak) {
             // Start timer
             setIsRunning(true);
             setSeconds(time * 60);
-            timerStartTime.current = now;  // ADD THIS LINE
+            timerStartTime.current = now;
         } else {
             // Reset timer
             setIsRunning(false);
             setisBreak(false);
             setSeconds(time * 60);
-            timerStartTime.current = now;  // ADD THIS LINE
+            timerStartTime.current = now;
         }
     };
     useEffect(() => {
@@ -195,7 +211,7 @@ const Timer = ({ userSocket }) => {
                 restval: restval,
             })
         }
-    }, [isBreak, isRunning, rest, timeval, restval, RoomId, time]); 
+    }, [isBreak, isRunning, rest, timeval, restval, RoomId, time]);
     return (
         <div className="min-h-screen bg-black flex flex-col lg:flex-row gap-4 p-4 md:p-6">
             {/* Members List */}
@@ -253,7 +269,7 @@ const Timer = ({ userSocket }) => {
                             type="range"
                             min={0}
                             max="90"
-                            value={timeval}
+                            value={localTimeVal}
                             onChange={handleChangetime}
                             onMouseUp={updatetime}
                             className="range range-xs range-accent w-full"
@@ -267,7 +283,7 @@ const Timer = ({ userSocket }) => {
                             type="range"
                             min={0}
                             max="20"
-                            value={restval}
+                            value={localRestVal}
                             onChange={handleChangebreak}
                             onMouseUp={updaterest}
                             className="range range-xs range-accent w-full"
