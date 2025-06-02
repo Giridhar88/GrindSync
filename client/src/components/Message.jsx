@@ -50,7 +50,7 @@ const Message = ({ roomid, socket, enabled }) => {
 
       <div className='flex justify-center items-center gap-2'>
         <input
-        // disabled = {!enabled}
+        disabled = {!enabled}
         onKeyDown={(e)=>{
           if(e.key === 'Enter'){
             sendMessage()
