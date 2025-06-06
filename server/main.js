@@ -3,7 +3,7 @@ const cors = require('cors')
 const express = require('express')
 const app = express()
 require('dotenv').config();
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "https://grind-sync.vercel.app";
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://grind-sync.vercel.app";
 app.use(cors({ origin: CLIENT_ORIGIN }));
 const PORT = process.env.PORT
 const path = require('path')
