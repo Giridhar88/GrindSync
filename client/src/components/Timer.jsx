@@ -272,6 +272,7 @@ const Timer = ({ userSocket }) => {
                             value={localTimeVal}
                             onChange={handleChangetime}
                             onMouseUp={updatetime}
+                            onTouchEnd={updatetime} 
                             className="range range-xs range-accent w-full"
                         />
                         <div className="text-center mt-2 text-gray-400">{time} min</div>
@@ -286,6 +287,7 @@ const Timer = ({ userSocket }) => {
                             value={localRestVal}
                             onChange={handleChangebreak}
                             onMouseUp={updaterest}
+                            onTouchEnd={updaterest} 
                             className="range range-xs range-accent w-full"
                             step="5"
                         />
