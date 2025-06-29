@@ -42,8 +42,6 @@ const Timer = ({ userSocket }) => {
                 hasInitialized.current = true
 
                 socket.emit('init-states', roomid, (serverStates) => {
-                    console.log(`init states called with values `)
-                    console.table(serverStates)
 
                     setisBreak(serverStates.isBreak)
                     setIsRunning(serverStates.isRunning)
@@ -54,7 +52,6 @@ const Timer = ({ userSocket }) => {
                     setSeconds(serverStates.remainingSeconds || serverStates.time * 60)
                     timerStartTime.current = serverStates.timerStartTime
                     joined.current = false;
-                    console.log("==INIT COMPLETE==")
                 })
 
             }
@@ -68,10 +65,7 @@ const Timer = ({ userSocket }) => {
 
 
         socket.on('update-states', (states) => {
-            console.log("=== UPDATE-STATES RECEIVED ===")
 
-            console.log("Server state:", states)
-            console.log("Time difference:", Date.now() - states.now)
 
             // Always update settings (these don't affect running timers)
             setTime(states.time)
@@ -89,7 +83,6 @@ const Timer = ({ userSocket }) => {
             }
 
 
-            console.log("=== END UPDATE ===")
         })
 
         const handleBack = () => {
@@ -200,7 +193,6 @@ const Timer = ({ userSocket }) => {
     };
     useEffect(() => {
         if (userSocket.current && !joined.current) {
-            console.log('sent the states to server')
             userSocket.current.emit('timer-update', {
                 isRunning: isRunning,
                 isBreak: isBreak,

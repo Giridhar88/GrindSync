@@ -61,7 +61,6 @@ const Roomjoin = ({backendURL, userSocket}) => {
     const handleJoinRoom= ()=>{
         setisLoading(true)
         let data = getValues('roomid')
-        console.log(data)
         setuserRequest((prev)=>({...prev, roomid:data}))
         const url = `${backendURL}/api/join-req`
         const options = {
@@ -73,7 +72,6 @@ const Roomjoin = ({backendURL, userSocket}) => {
         }
         fetch(url, options).then(response=>{
             if(!response.ok){
-                console.log('error from server side')
                 setisLoading(false)
             }
             else{

@@ -11,7 +11,6 @@ function App() {
   const socketref = useRef(null)
 useEffect(() => {
   socketref.current = io(backendURL)
-  console.log(backendURL)
   socketref.current.on('connect', ()=>{
     console.log(`connected to server with id ${socketref.current.id}` )
   })
